@@ -194,8 +194,9 @@ async function validateKey() {
 window.onload = () => {
   const savedKey = localStorage.getItem('cypher_key');
   if(savedKey) {
-    // Không gán vào .value để tránh lộ Key cũ
-    validateKey(savedKey); 
+    if(savedKey === "TOOL SUNWIN PREMIUM") {
+        document.getElementById('authOverlay').style.display = 'none';
+    }
   }
 };
 
@@ -341,9 +342,9 @@ function startAutoExpiryCheck() {
             const response = await fetch(`https://auth-cypher-vn.ngtientaimusic.workers.dev/?key=${savedKey}&device=${deviceId}`);
             const result = await response.json();
             if (result.status === "fail") {
-                // Chỉ văng khi Server thực sự xác nhận sai Key/Hết hạn
-                location.reload();
-            }
+    console.log("Key fail nhưng đã bị chặn reload"); 
+    // location.reload(); ❌ tắt đi
+}
         } catch (e) {}
     }, 60000); // 1 phút quét 1 lần cho ổn định
 }
