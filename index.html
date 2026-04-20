@@ -35,9 +35,13 @@ body {
 }
 
 iframe {
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
-  border: none; z-index: 1;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  border: none;
+  z-index: 0; /* 🔥 hạ xuống dưới */
+  pointer-events: none; /* 🔥 chặn click khi chưa login */
 }
 
 #botWrap {
@@ -172,33 +176,54 @@ function getFixedDeviceId() {
     return id;
 }
 
+// 1. Thay link Serveo của bạn vào đây
+const API_URL = "https://a7d364072b8e1890-14-247-196-235.serveousercontent.com";
+
 async function validateKey() {
     const key = document.getElementById('licenseKey').value.trim();
     const status = document.getElementById('authStatus');
-    const btn = document.getElementById('authBtn');
+    const deviceId = getFixedDeviceId(); // Hàm này bạn đã có ở trên rồi
 
-    const FIXED_KEY = "TOOL SUNWIN PREMIUM"; // key bạn muốn
+    if(!key) {
+        status.innerHTML = `<span style="color:red">Vui lòng nhập Key!</span>`;
+        return;
+    }
 
-    if(key === FIXED_KEY) {
-        status.innerHTML = `<span style="color:#00ff00">Thành công!</span>`;
-        localStorage.setItem('cypher_key', key);
-        setTimeout(() => {
-            document.getElementById('authOverlay').style.display = 'none';
-        }, 500);
-    } else {
-        status.innerHTML = `<span style="color:red">Sai key!</span>`;
+    status.innerHTML = "Đang xác thực thiết bị...";
+
+    try {
+        // Gửi dữ liệu sang Termux để kiểm tra máy
+        const response = await fetch(`${API_URL}/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key, hwid: deviceId })
+        });
+
+        const result = await response.json();
+
+        if(result.status === "success") {
+            status.innerHTML = `<span style="color:#00ff00">Thành công!</span>`;
+            
+            // Lưu dữ liệu vào máy khách
+            localStorage.setItem('cypher_data', JSON.stringify({
+                key: key,
+                device: deviceId,
+                active: true
+            }));
+
+            // Mở khóa Tool và ẩn màn hình chờ
+            document.querySelector("iframe").style.pointerEvents = "auto";
+            setTimeout(() => {
+                document.getElementById('authOverlay').style.display = 'none';
+            }, 800);
+        } else {
+            // Hiển thị lỗi từ Server (Sai key hoặc máy khác đã dùng)
+            status.innerHTML = `<span style="color:red">${result.message}</span>`;
+        }
+    } catch (e) {
+        status.innerHTML = `<span style="color:yellow">Lỗi kết nối Server! (Hãy kiểm tra Termux)</span>`;
     }
 }
-
-// Tự động kiểm tra nếu đã lưu key trong máy
-window.onload = () => {
-  const savedKey = localStorage.getItem('cypher_key');
-  if(savedKey) {
-    if(savedKey === "TOOL SUNWIN PREMIUM") {
-        document.getElementById('authOverlay').style.display = 'none';
-    }
-  }
-};
 
 (() => {
   const botWrap = document.getElementById('botWrap');
@@ -334,19 +359,35 @@ let expiryCheckRetry = 0; // Biến đếm số lần lỗi mạng
 
 function startAutoExpiryCheck() {
     setInterval(async () => {
+
         const savedKey = localStorage.getItem('cypher_key');
         if (!savedKey) return;
+
+        // ✅ CHECK KEY HẾT HẠN
+        const data = JSON.parse(localStorage.getItem('cypher_data'));
+        if(data) {
+            const now = Date.now();
+            const deviceId = getFixedDeviceId();
+
+            if(data.device !== deviceId || now >= data.expiry) {
+                localStorage.removeItem('cypher_data');
+                location.reload();
+            }
+        }
+
         const deviceId = getFixedDeviceId();
 
         try {
             const response = await fetch(`https://auth-cypher-vn.ngtientaimusic.workers.dev/?key=${savedKey}&device=${deviceId}`);
             const result = await response.json();
+
             if (result.status === "fail") {
-    console.log("Key fail nhưng đã bị chặn reload"); 
-    // location.reload(); ❌ tắt đi
-}
+                console.log("Key fail nhưng đã bị chặn reload");
+            }
+
         } catch (e) {}
-    }, 60000); // 1 phút quét 1 lần cho ổn định
+
+    }, 60000);
 }
 
 
