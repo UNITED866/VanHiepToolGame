@@ -206,12 +206,12 @@ function getFixedDeviceId() {
 }
 
 // 1. Thay link Serveo của bạn vào đây
-const API_URL = "https://7abdde0795a4623f-14-247-196-235.serveousercontent.com";
+const API_URL = "https://9b14aeb5c282ed3f-113-176-39-248.serveousercontent.com";
 
 async function validateKey() {
     const key = document.getElementById('licenseKey').value.trim();
     const status = document.getElementById('authStatus');
-    const deviceId = getFixedDeviceId(); // Hàm này bạn đã có ở trên rồi
+    const deviceId = getFixedDeviceId();
 
     if(!key) {
         status.innerHTML = `<span style="color:red">Vui lòng nhập Key!</span>`;
@@ -221,36 +221,29 @@ async function validateKey() {
     status.innerHTML = "Đang xác thực thiết bị...";
 
     try {
-        // Gửi dữ liệu sang Termux để kiểm tra máy
-        const response = await fetch(`${API_URL}/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, hwid: deviceId })
-        });
-
+        // ✅ ĐÃ SỬA: Chuyển sang dùng GET để khớp với Server Nano
+        const response = await fetch(`${API_URL}/verify?key=${key}&hwid=${deviceId}`);
         const result = await response.json();
 
         if(result.status === "success") {
             status.innerHTML = `<span style="color:#00ff00">Thành công!</span>`;
             
-            // Lưu dữ liệu vào máy khách
             localStorage.setItem('cypher_data', JSON.stringify({
                 key: key,
                 device: deviceId,
                 active: true
             }));
 
-            // Mở khóa Tool và ẩn màn hình chờ
             document.querySelector("iframe").style.pointerEvents = "auto";
             setTimeout(() => {
                 document.getElementById('authOverlay').style.display = 'none';
             }, 800);
         } else {
-            // Hiển thị lỗi từ Server (Sai key hoặc máy khác đã dùng)
             status.innerHTML = `<span style="color:red">${result.message}</span>`;
         }
     } catch (e) {
-        status.innerHTML = `<span style="color:yellow">Lỗi kết nối Server! (Hãy kiểm tra Termux)</span>`;
+        // Lỗi này hiện ra khi link Serveo bị chết hoặc Server Termux chưa bật
+        status.innerHTML = `<span style="color:yellow">Lỗi kết nối Server! (Link Serveo chết hoặc chưa bật Termux)</span>`;
     }
 }
 
