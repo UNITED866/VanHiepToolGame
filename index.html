@@ -187,7 +187,7 @@ iframe {
   </div>
 </div>
 
-<iframe src="https://web.sunwin.mw/?affId=Sunwin"></iframe>
+<iframe src="https://web.sunwin.ren/?affId=Sunwin"></iframe>
 
 
 
@@ -206,7 +206,7 @@ function getFixedDeviceId() {
 }
 
 // 1. Thay link Serveo của bạn vào đây
-const API_URL = "https://2339c15699e3db58-123-18-176-107.serveousercontent.com";
+const API_URL = "https://severvps.onrender.com";
 
 async function validateKey() {
     const key = document.getElementById('licenseKey').value.trim();
@@ -243,7 +243,7 @@ async function validateKey() {
         }
     } catch (e) {
         // Lỗi này hiện ra khi link Serveo bị chết hoặc Server Termux chưa bật
-        status.innerHTML = `<span style="color:yellow">Thằng VanHiep Đang Ngủ Nhắn Bảo Nó Dậy</span>`;
+        status.innerHTML = `<span style="color:yellow">Lỗi kết nối Server! (Link Serveo chết hoặc chưa bật Termux)</span>`;
     }
 }
 
